@@ -1,0 +1,40 @@
+- name: first play
+  hosts: myhosts
+  tasks:
+   - name: Copy required files
+     ansible.builtin.copy:
+      src: /home/peter/Code/dedicated.tar.gz
+      dest: /home/peter/dedicated.tar.gz
+      mode: '0644'
+   - name: Unarchive
+     ansible.builtin.unarchive:
+      src: /home/peter/Code/dedicated.tar.gz
+      dest: /home/peter/
+      owner: peter
+      group: peter
+      mode: '0755'
+
+   - name: Copy server_req.sh
+     ansible.builtin.copy:
+      src: ./server_req.sh
+      dest: /home/peter/server_req.sh
+      mode: '0644'
+   - name : mark exec 
+     ansible.builtin.file:
+      path: /home/peter/server_req.sh
+      mode: '0755'
+   - name: Run server_req.sh
+     ansible.builtin.shell: /bin/bash /home/peter/server_req.sh 
+     become: true
+     register: server_req_output
+   - name: Show server_req stdout
+     ansible.builtin.debug:
+      var: server_req_output.stdout_lines
+   - name: Show server_req stderr
+     ansible.builtin.debug:
+      var: server_req_output.stderr_lines
+
+
+
+  
+
