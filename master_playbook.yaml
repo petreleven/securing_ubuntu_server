@@ -1,0 +1,11 @@
+- name: Install dependencies
+  import_playbook: playbook_install_dependencies.yaml
+  tags: [install]
+
+- name: Deploy container images
+  import_playbook: playbook_pull_images.yaml
+  tags: [deploy]
+
+- name: Configure worker
+  import_playbook: playbook_worker_setup.yaml
+  tags: [worker]

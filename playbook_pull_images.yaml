@@ -1,0 +1,47 @@
+- name: Deploy container images using Python script
+  hosts: myhosts
+  become: false
+  vars:
+    user_home: /home/peter
+    deploy_script_dir: "{{ user_home }}/dedicated_servers"
+
+  tasks:
+    - name: Verify deploy script exists
+      ansible.builtin.stat:
+        path: "{{ deploy_script_dir }}/deploy.py"
+      register: deploy_script_stat
+      tags: [deploy, verify]
+
+    - name: Fail if deploy script not found
+      ansible.builtin.fail:
+        msg: "Deploy script not found at {{ deploy_script_dir }}/deploy.py"
+      when: not deploy_script_stat.stat.exists
+      tags: [deploy, verify]
+
+    - name: Execute Python deployment script
+      ansible.builtin.shell: python3 deploy.py
+      become: true
+      register: python_deployment_output
+      args:
+        chdir: "{{ deploy_script_dir }}"
+      environment:
+        PYTHONUNBUFFERED: "1"
+      failed_when: false # Allow script to handle its own error codes
+      tags: [deploy, execute]
+
+    - name: Display deployment script output
+      ansible.builtin.debug:
+        var: python_deployment_output.stdout_lines
+      when: python_deployment_output.stdout_lines is defined
+      tags: [deploy, debug]
+
+    - name: Display deployment script errors
+      ansible.builtin.debug:
+        var: python_deployment_output.stderr_lines
+      when: python_deployment_output.stderr_lines is defined and python_deployment_output.stderr_lines | length > 0
+      tags: [deploy, debug]
+
+    - name: Check deployment script exit code
+      ansible.builtin.debug:
+        msg: "Deployment script completed with exit code: {{ python_deployment_output.rc }}"
+      tags: [deploy, debug]

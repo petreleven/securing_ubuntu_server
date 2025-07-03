@@ -1,0 +1,17 @@
+{
+  "LogFileName": "badger-33920:3f93b037-924b-451c-abc1-9766e1d2b923.log",
+  "PidFileName": "badger-33920:3f93b037-924b-451c-abc1-9766e1d2b923.pid",
+  "ClusterName": "badger:allworkers",
+  "CustomQueues": {
+    "Queues": {
+      "${SERVER_IP}":{
+          "Concurrency": 5,
+        "Timeout": 300,
+        "DoneLog":true
+
+      }
+
+    }
+  },
+  "RedisURL": "redis://localhost:6379"
+}

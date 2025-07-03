@@ -1,0 +1,63 @@
+- name: Configure badger worker service
+  hosts: myhosts
+  become: false
+  vars:
+    user_home: /home/peter
+    user_name: peter
+    badger_binary: "{{ user_home }}/dedicated_servers/badger"
+    badger_config_dir: "{{ user_home }}/.badger"
+
+  tasks:
+    - name: Verify badger binary exists
+      ansible.builtin.stat:
+        path: "{{ badger_binary }}"
+      register: badger_binary_stat
+      tags: [worker, verify]
+
+    - name: Fail if badger binary not found
+      ansible.builtin.fail:
+        msg: "Badger binary not found at {{ badger_binary }}"
+      when: not badger_binary_stat.stat.exists
+      tags: [worker, verify]
+
+    - name: Make badger worker binary executable
+      ansible.builtin.file:
+        path: "{{ badger_binary }}"
+        mode: "0755"
+      tags: [worker, permissions]
+
+    - name: Create badger configuration directory
+      ansible.builtin.file:
+        path: "{{ badger_config_dir }}"
+        state: directory
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        mode: "0755"
+      tags: [worker, config]
+
+    - name: Copy badger configuration template
+      ansible.builtin.copy:
+        src: ./badger-config.json
+        dest: "{{ badger_config_dir }}/config-base.json"
+        mode: "0644"
+      tags: [worker, config]
+    - name: Generate worker configuration with server IP
+      ansible.builtin.shell: |
+        export SERVER_IP="$(curl ifconfig.me)"
+        envsubst < config-base.json > config.json
+      args:
+        chdir: "{{ badger_config_dir }}"
+      register: config_generation_output
+      tags: [worker, config]
+
+    - name: Verify generated configuration file
+      ansible.builtin.stat:
+        path: "{{ badger_config_dir }}/config.json"
+      register: config_file_stat
+      tags: [worker, verify]
+
+    - name: Display configuration generation results
+      ansible.builtin.debug:
+        msg:
+          - "Configuration file created: {{ config_file_stat.stat.exists }}"
+      tags: [worker, debug]
